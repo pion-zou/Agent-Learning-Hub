@@ -1,0 +1,100 @@
+# Python读取文档，分几种最常用类型，同样按**模板积木**记，不用死背
+## 1. 读取纯文本 `.txt`（最简单）
+```python
+# 打开并读取全部内容
+with open("test.txt", "r", encoding="utf-8") as f:
+    text = f.read()
+
+print(text)
+```
+积木拆解：
+- `with open(文件名, "r", encoding="utf-8")`：打开文件，`r`=read只读；`utf-8`防止中文乱码
+- `f.read()`：一次性读取全部文字
+> 推荐永远用 `with`，会自动关闭文件，不容易出错
+
+读取一行一行（大文件，不要一次性全读）
+```python
+with open("test.txt", "r", encoding="utf-8") as f:
+    for line in f:
+        print(line.strip()) # strip去掉换行空格
+```
+
+## 2. 读取Word文档 `.docx`（新版word，不是老doc）
+需要先装库：
+```bash
+pip install python-docx
+```
+代码模板：
+```python
+from docx import Document
+
+doc = Document("test.docx")
+full_text = ""
+for para in doc.paragraphs:
+    full_text += para.text + "\n"
+
+print(full_text)
+```
+> ⚠️ 只能读 `.docx`，**旧版`.doc`不能用这个库**
+
+## 3. 读取PDF
+安装：
+```bash
+pip install PyPDF2
+```
+```python
+from PyPDF2 import PdfReader
+
+reader = PdfReader("test.pdf")
+full_text = ""
+for page in reader.pages:
+    full_text += page.extract_text()
+
+print(full_text)
+```
+
+## 4. 读取csv表格（类Excel）
+```python
+import csv
+
+with open("data.csv", "r", encoding="utf-8") as f:
+    reader = csv.reader(f)
+    for row in reader:
+        print(row)
+```
+
+# 统一结构规律（重点！和调用大模型是同一套思路）
+1. **导入工具包**（import xxx）
+2. **打开/加载文件**
+3. **读取内容**
+4. **使用内容（打印/传给大模型）**
+
+# 结合你之前DeepSeek代码，举一个完整串联例子
+读取txt文档，把文档内容发给DeepSeek分析
+```python
+import os
+from openai import OpenAI
+
+# 1.读取本地txt文件
+with open("article.txt", "r", encoding="utf-8") as f:
+    file_content = f.read()
+
+# 2.连接DeepSeek
+client = OpenAI(
+    api_key=os.environ['DEEPSEEK_API_KEY'],
+    base_url="[https://api.deepseek.com](https://api.deepseek.com)"
+)
+
+# 3.把读到的文档放进提问
+response = client.chat.completions.create(
+    model="deepseek-flash",
+    messages=[
+        {"role":"system","content":"你是文档分析助手"},
+        {"role":"user","content":f"分析下面文档内容：\n{file_content}"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+你想先练哪一种？txt / word / pdf？我给你做填空版模板练习。
